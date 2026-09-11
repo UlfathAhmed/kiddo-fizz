@@ -1,0 +1,119 @@
+{
+  "logo": {
+    "sources": [
+      {
+        "src": "/images/logo-200.webp",
+        "width": 200
+      },
+      {
+        "src": "/images/logo-400.webp",
+        "width": 400
+      }
+    ],
+    "width": 620,
+    "height": 225,
+    "aspect": 2.7556
+  },
+  "hero-product": {
+    "sources": [
+      {
+        "src": "/images/hero-product-480.webp",
+        "width": 480
+      },
+      {
+        "src": "/images/hero-product-768.webp",
+        "width": 768
+      },
+      {
+        "src": "/images/hero-product-920.webp",
+        "width": 920
+      }
+    ],
+    "width": 920,
+    "height": 962,
+    "aspect": 0.9563
+  },
+  "feature-bottle": {
+    "sources": [
+      {
+        "src": "/images/feature-bottle-200.webp",
+        "width": 200
+      },
+      {
+        "src": "/images/feature-bottle-340.webp",
+        "width": 340
+      }
+    ],
+    "width": 340,
+    "height": 1095,
+    "aspect": 0.3105
+  },
+  "foot-bed": {
+    "sources": [
+      {
+        "src": "/images/foot-bed-768.webp",
+        "width": 768
+      },
+      {
+        "src": "/images/foot-bed-1200.webp",
+        "width": 1200
+      },
+      {
+        "src": "/images/foot-bed-1500.webp",
+        "width": 1500
+      }
+    ],
+    "width": 1500,
+    "height": 484,
+    "aspect": 3.0992
+  },
+  "card-one": {
+    "sources": [
+      {
+        "src": "/images/card-one-480.webp",
+        "width": 480
+      },
+      {
+        "src": "/images/card-one-750.webp",
+        "width": 750
+      }
+    ],
+    "width": 750,
+    "height": 600,
+    "aspect": 1.25
+  },
+  "card-two": {
+    "sources": [
+      {
+        "src": "/images/card-two-480.webp",
+        "width": 480
+      },
+      {
+        "src": "/images/card-two-750.webp",
+        "width": 750
+      }
+    ],
+    "width": 750,
+    "height": 600,
+    "aspect": 1.25
+  },
+  "case": {
+    "sources": [
+      {
+        "src": "/images/case-400.webp",
+        "width": 400
+      },
+      {
+        "src": "/images/case-620.webp",
+        "width": 620
+      },
+      {
+        "src": "/images/case-760.webp",
+        "width": 760
+      }
+    ],
+    "width": 760,
+    "height": 608,
+    "aspect": 1.25
+  }
+}

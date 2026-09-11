@@ -1,0 +1,57 @@
+/* Design tokens and base rules, lifted unchanged from the approved prototype.
+   The --in-* values are the hero entrance score: one place to retime the whole
+   sequence. Kept as CSS rather than moved into the animation library on purpose —
+   GSAP's clock is requestAnimationFrame, which never starts in a hidden or
+   embedded document, and that would leave the hero blank rather than unanimated. */
+:root {
+  /* red sampled off the client's label */
+  --red: #C8121A;
+  --red-deep: #8E0A10;
+  --red-lift: #E0342C;
+  --cream: #FBF2E6;
+  --ink: #1A1512;
+  --ink-soft: #6B5F58;
+
+  /* sampled straight out of the logo artwork */
+  --brand-red: #EE0A1E;
+  --brand-orange: #FB8C0B;
+  --brand-green: #0AA838;
+  --brand-blue: #0660C8;
+  --brand-yellow: #FFC72C;
+
+  /* Hero entrance, as one legible score rather than five delays buried in five
+     rules. Last beat starts at .85 and runs .7, so the hero is at rest ~1.55s.
+     Driven by CSS and not the animation library on purpose: GSAP's clock is
+     requestAnimationFrame, which never starts in a hidden or embedded document —
+     that would leave the hero blank at opacity 0 rather than merely unanimated. */
+  --in-nav: 0s;
+  --in-product: .05s;
+  --in-title: .25s;
+  --in-note: .70s;
+  --in-cta: .78s;
+  --in-bubbles: .85s;
+
+  /* The families come from next/font, which self-hosts them — the prototype
+     pulled them from Google over a render-blocking <link>. Same three faces, no
+     third-party request, no FOUT, and one less GDPR question for a UK site.
+     Fallbacks are kept for the moment before the font file resolves. */
+  --display: var(--font-display), Anton, 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --round: var(--font-round), Fredoka, 'Plus Jakarta Sans', sans-serif;
+  --body: var(--font-body), 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { overflow-x: clip; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-weight: 400; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; }
+ul { margin: 0; padding: 0; list-style: none; }
+
