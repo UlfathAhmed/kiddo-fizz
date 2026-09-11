@@ -18,7 +18,10 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SRC = join(HERE, "..", "..", "prototype", "assets");
+/* The originals live in the app now. They used to sit in the prototype, which
+   has since been removed — the pitch build is in git history if it is ever
+   wanted back. */
+const SRC = join(HERE, "..", "assets");
 const OUT = join(HERE, "..", "public", "images");
 
 /* Only the seven assets the design actually uses. The others in prototype/assets

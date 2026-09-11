@@ -1,12 +1,17 @@
-// Local static server for reviewing the design preview and the scroll prototype.
-// Also accepts POST /__save so a page can hand captured frames back to disk.
+// Serves the image tools in tools/ and accepts POST /__save so they can write
+// results straight to disk. Kept after the prototype was removed because the
+// background keyer has no off-the-shelf replacement — sharp resizes and
+// converts, but the flood-fill-from-the-border keying with protected regions
+// for translucent plastic was built for this product's artwork.
+//
+//   node server.mjs   then open http://localhost:5178/tools/key.html
 import { createServer } from "node:http";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, extname, normalize } from "node:path";
 
 const ROOT = process.cwd();
-const FRAMES = process.env.FRAME_DIR || join(ROOT, "wireframe video", "frames");
-const ASSETS = join(ROOT, "prototype", "assets");
+const FRAMES = process.env.FRAME_DIR || join(ROOT, "tools", "out");
+const ASSETS = join(ROOT, "web", "assets");
 
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
@@ -43,7 +48,7 @@ createServer(async (req, res) => {
     return;
   }
 
-  let p = path === "/" ? "/design/_preview.html" : path;
+  let p = path === "/" ? "/tools/key.html" : path;
   if (p.includes("..")) { res.writeHead(400).end("bad path"); return; }
   try {
     const buf = await readFile(join(ROOT, normalize(p)));
