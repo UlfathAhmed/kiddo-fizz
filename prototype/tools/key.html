@@ -1,0 +1,212 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>background key</title>
+<style>body{margin:0;background:#c0392b;color:#fff;font:13px monospace;padding:10px}canvas{max-width:340px;vertical-align:top}</style>
+<div id="log">working…</div>
+<canvas id="out"></canvas>
+<script>
+// Cuts the white studio background off a product render and writes a PNG with
+// alpha. Flood fills inward from the border rather than thresholding globally,
+// so bright specular highlights ON the bottle survive - a plain luminance key
+// punches holes straight through the cap.
+const log = document.getElementById("log");
+const q = new URLSearchParams(location.search);
+const SRC = q.get("src") || "/Images/single%20cola%20bottle%20.jpeg";
+const OUT = q.get("out") || "bottle-cutout.webp";
+const FMT = OUT.endsWith(".webp") ? "image/webp" : "image/png";
+const QUAL = Number(q.get("q") || 0.92);
+const TOL = Number(q.get("tol") || 42);      // how far from the seed colour still counts as background
+const FEATHER = Number(q.get("feather") || 1.2);
+const NOKEY = q.get("nokey") === "1";   // already has alpha: just trim and re-encode
+const MAXW = Number(q.get("maxw") || 0); // downscale cap on the long edge
+// erase=x0,y0,x1,y1 as fractions of the trimmed output. Used to punch the AI
+// generated bottle out of the splash composite so the real render can stand in
+// its place with nothing of the fake label left underneath.
+const ERASE = (q.get("erase") || "").split(",").map(Number);
+// protect=x0,y0,x1,y1 as fractions of the SOURCE. The flood fill is not allowed
+// into this region. Clear plastic reads as near-white against a white background,
+// so the fill walks straight through a bottle neck and leaves the cap floating.
+// Inside the region alpha is derived from brightness instead: dark detail (the
+// ring, the threads) stays solid, near-white plastic goes translucent so the page
+// colour shows through it the way it would in life.
+const PROTECT = (q.get("protect") || "").split(",").map(Number);
+// Drop shadows often survive as islands detached from the subject. The product is
+// one connected shape, so keeping only the largest component removes them without
+// pushing the tolerance high enough to start eating the product itself.
+const LARGEST = q.get("largest") !== "0";
+const hasProtect = PROTECT.length === 4 && PROTECT.every((v) => !isNaN(v));
+const EFEATHER = Number(q.get("efeather") || 26);
+window.__done = false;
+
+const img = new Image();
+img.crossOrigin = "anonymous";
+img.onload = () => { try { run(); } catch (e) { log.textContent = "ERR " + e; window.__done = "error: " + e; } };
+img.onerror = (e) => { log.textContent = "load failed"; window.__done = "load failed"; };
+img.src = SRC;
+
+function run() {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const c = document.getElementById("out");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const id = g.getImageData(0, 0, w, h);
+  const d = id.data;
+
+  // seed from the four corners so we key against the real background colour
+  let sr = 0, sg = 0, sb = 0;
+  const corners = [0, (w - 1) * 4, (h - 1) * w * 4, ((h - 1) * w + w - 1) * 4];
+  for (const o of corners) { sr += d[o]; sg += d[o + 1]; sb += d[o + 2]; }
+  sr /= 4; sg /= 4; sb /= 4;
+
+  const bg = new Uint8Array(w * h);
+  const stack = NOKEY ? [] : [];
+  if (NOKEY) {
+    // source already carries alpha; treat fully transparent pixels as background
+    for (let i = 0; i < w * h; i++) if (d[i * 4 + 3] < 8) bg[i] = 1;
+  }
+  if (!NOKEY) {
+    for (let x = 0; x < w; x++) { stack.push(x, x + (h - 1) * w); }
+    for (let y = 0; y < h; y++) { stack.push(y * w, y * w + w - 1); }
+  }
+
+  const inProtect = (i) => {
+    if (!hasProtect) return false;
+    const x = (i % w) / w, y = ((i / w) | 0) / h;
+    return x >= PROTECT[0] && x <= PROTECT[2] && y >= PROTECT[1] && y <= PROTECT[3];
+  };
+  const near = (i) => {
+    if (inProtect(i)) return false;
+    const o = i * 4;
+    return Math.abs(d[o] - sr) <= TOL && Math.abs(d[o + 1] - sg) <= TOL && Math.abs(d[o + 2] - sb) <= TOL;
+  };
+
+  while (stack.length) {
+    const i = stack.pop();
+    if (bg[i]) continue;
+    if (!near(i)) continue;
+    bg[i] = 1;
+    const x = i % w, y = (i / w) | 0;
+    if (x > 0) stack.push(i - 1);
+    if (x < w - 1) stack.push(i + 1);
+    if (y > 0) stack.push(i - w);
+    if (y < h - 1) stack.push(i + w);
+  }
+
+  // Soft edge: alpha from how many neighbours are background, so the cut does not
+  // read as a hard sticker edge against a colour field.
+  const alpha = new Float32Array(w * h);
+  const R = Math.max(1, Math.round(FEATHER));
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (bg[i]) { alpha[i] = 0; continue; }
+      if (NOKEY) { alpha[i] = d[i * 4 + 3] / 255; continue; }
+      if (inProtect(i)) {
+        const o = i * 4;
+        const lum = (d[o] + d[o + 1] + d[o + 2]) / 765;
+        alpha[i] = Math.min(1, Math.max(0.26, 1.15 - lum));
+        continue;
+      }
+      let n = 0, tot = 0;
+      for (let dy = -R; dy <= R; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+          const xx = x + dx, yy = y + dy;
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+          tot++; if (bg[yy * w + xx]) n++;
+        }
+      }
+      alpha[i] = tot ? 1 - (n / tot) * 0.85 : 1;
+    }
+  }
+
+  if (LARGEST) {
+    const seen = new Uint8Array(w * h);
+    let bestSize = 0, bestSeed = -1;
+    for (let start = 0; start < w * h; start++) {
+      if (seen[start] || alpha[start] <= 0.08) continue;
+      let size = 0; const st = [start]; seen[start] = 1;
+      const members = [];
+      while (st.length) {
+        const i = st.pop(); size++; members.push(i);
+        const x = i % w, y = (i / w) | 0;
+        if (x > 0 && !seen[i - 1] && alpha[i - 1] > 0.08) { seen[i - 1] = 1; st.push(i - 1); }
+        if (x < w - 1 && !seen[i + 1] && alpha[i + 1] > 0.08) { seen[i + 1] = 1; st.push(i + 1); }
+        if (y > 0 && !seen[i - w] && alpha[i - w] > 0.08) { seen[i - w] = 1; st.push(i - w); }
+        if (y < h - 1 && !seen[i + w] && alpha[i + w] > 0.08) { seen[i + w] = 1; st.push(i + w); }
+      }
+      if (size > bestSize) { bestSize = size; bestSeed = start; }
+    }
+    // second pass: keep only the component containing bestSeed
+    if (bestSeed >= 0) {
+      const keep = new Uint8Array(w * h);
+      const st = [bestSeed]; keep[bestSeed] = 1;
+      while (st.length) {
+        const i = st.pop();
+        const x = i % w, y = (i / w) | 0;
+        if (x > 0 && !keep[i - 1] && alpha[i - 1] > 0.08) { keep[i - 1] = 1; st.push(i - 1); }
+        if (x < w - 1 && !keep[i + 1] && alpha[i + 1] > 0.08) { keep[i + 1] = 1; st.push(i + 1); }
+        if (y > 0 && !keep[i - w] && alpha[i - w] > 0.08) { keep[i - w] = 1; st.push(i - w); }
+        if (y < h - 1 && !keep[i + w] && alpha[i + w] > 0.08) { keep[i + w] = 1; st.push(i + w); }
+      }
+      for (let i = 0; i < w * h; i++) if (!keep[i]) alpha[i] = 0;
+    }
+  }
+
+  let kept = 0;
+  for (let i = 0; i < w * h; i++) {
+    const a = alpha[i];
+    d[i * 4 + 3] = Math.round(a * 255);
+    if (a > 0.5) kept++;
+  }
+  g.putImageData(id, 0, 0);
+
+  // trim to the subject so the PNG is not mostly empty space
+  let minX = w, minY = h, maxX = 0, maxY = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (d[(y * w + x) * 4 + 3] > 8) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  const tw = maxX - minX + 1, th = maxY - minY + 1;
+  const scale = MAXW && tw > MAXW ? MAXW / tw : 1;
+  const t = document.createElement("canvas");
+  t.width = Math.round(tw * scale); t.height = Math.round(th * scale);
+  const tg = t.getContext("2d");
+  tg.imageSmoothingQuality = "high";
+  tg.drawImage(c, minX, minY, tw, th, 0, 0, t.width, t.height);
+
+  if (ERASE.length === 4 && ERASE.every((v) => !isNaN(v))) {
+    const ex0 = ERASE[0] * t.width, ey0 = ERASE[1] * t.height;
+    const ex1 = ERASE[2] * t.width, ey1 = ERASE[3] * t.height;
+    tg.save();
+    tg.globalCompositeOperation = "destination-out";
+    // soft edge so the cut does not leave a hard rectangle against the splash
+    const gr = tg.createLinearGradient(ex0 - EFEATHER, 0, ex0 + EFEATHER, 0);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,1)");
+    tg.fillStyle = "#000";
+    tg.fillRect(ex0, ey0, ex1 - ex0, ey1 - ey0);
+    tg.fillStyle = gr;
+    tg.fillRect(ex0 - EFEATHER, ey0, EFEATHER * 2, ey1 - ey0);
+    const gr2 = tg.createLinearGradient(ex1 + EFEATHER, 0, ex1 - EFEATHER, 0);
+    gr2.addColorStop(0, "rgba(0,0,0,0)"); gr2.addColorStop(1, "rgba(0,0,0,1)");
+    tg.fillStyle = gr2;
+    tg.fillRect(ex1 - EFEATHER, ey0, EFEATHER * 2, ey1 - ey0);
+    const gr3 = tg.createLinearGradient(0, ey1 + EFEATHER, 0, ey1 - EFEATHER);
+    gr3.addColorStop(0, "rgba(0,0,0,0)"); gr3.addColorStop(1, "rgba(0,0,0,1)");
+    tg.fillStyle = gr3;
+    tg.fillRect(ex0 - EFEATHER, ey1 - EFEATHER, (ex1 - ex0) + EFEATHER * 2, EFEATHER * 2);
+    tg.restore();
+  }
+
+  window.__info = { src: w + "x" + h, out: t.width + "x" + t.height, erase: ERASE.join(","), kept: kept, seed: [sr | 0, sg | 0, sb | 0], tol: TOL };
+  log.textContent = JSON.stringify(window.__info);
+
+  fetch("/__save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: OUT, dataUrl: t.toDataURL(FMT, QUAL) })
+  }).then(() => { window.__done = true; log.textContent = "SAVED " + OUT + " " + JSON.stringify(window.__info); });
+}
+</script>

@@ -1,0 +1,66 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Asset conversion for Figma</title>
+<style>body{font:13px/1.6 ui-monospace,monospace;padding:20px;background:#111;color:#ddd}b{color:#6f6}</style>
+<h1>WebP &rarr; PNG / JPEG</h1>
+<p>Figma's <code>createImage</code> accepts PNG, JPEG and GIF only &mdash; not WebP.
+   Alpha images become PNG; the opaque ones become JPEG, which is far smaller and
+   matters because every byte here ends up base64'd inside the plugin file.</p>
+<pre id="log"></pre>
+<script>
+const JOBS = [
+  // name in,                 out,                w,    format, quality
+  ["logo.webp",              "fg-logo.png",       420, "image/png",  1],
+  ["feature-bottle.webp",    "fg-bottle.png",     460, "image/png",  1],
+  ["hero-product.webp",      "fg-hero.png",       820, "image/png",  1],
+  ["case.webp",              "fg-case.jpg",       620, "image/jpeg", .86],
+  ["card-cola.webp",         "fg-card-one.jpg",   680, "image/jpeg", .84],
+  ["card-soon.webp",         "fg-card-soon.jpg",  680, "image/jpeg", .84],
+];
+
+const log = document.getElementById("log");
+const say = (s) => { log.textContent += s + "\n"; };
+
+function load(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error("load failed: " + src));
+    i.src = src;
+  });
+}
+
+(async () => {
+  window.__results = [];
+  for (const [src, out, w, fmt, q] of JOBS) {
+    try {
+      const img = await load("/prototype/assets/" + src);
+      const scale = Math.min(1, w / img.naturalWidth);
+      const cw = Math.round(img.naturalWidth * scale);
+      const ch = Math.round(img.naturalHeight * scale);
+      const c = document.createElement("canvas");
+      c.width = cw; c.height = ch;
+      const g = c.getContext("2d");
+      // JPEG has no alpha, so anything transparent would come out black - lay
+      // white down first for those, and leave PNG untouched.
+      if (fmt === "image/jpeg") { g.fillStyle = "#fff"; g.fillRect(0, 0, cw, ch); }
+      g.imageSmoothingQuality = "high";
+      g.drawImage(img, 0, 0, cw, ch);
+      const dataUrl = c.toDataURL(fmt, q);
+      const kb = Math.round((dataUrl.length * 3 / 4) / 1024);
+      await fetch("/__save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: out, dataUrl })
+      });
+      window.__results.push({ out, w: cw, h: ch, kb });
+      say("ok  " + out + "  " + cw + "x" + ch + "  ~" + kb + "KB");
+    } catch (e) {
+      window.__results.push({ out, error: String(e) });
+      say("ERR " + out + "  " + e);
+    }
+  }
+  window.__done = true;
+  say("\nDONE");
+})();
+</script>

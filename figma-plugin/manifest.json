@@ -1,0 +1,8 @@
+{
+  "name": "KiddoFizz Drinks — build design file",
+  "id": "kiddofizz-drinks-design-builder",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "networkAccess": { "allowedDomains": ["none"] }
+}

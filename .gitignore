@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------- dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# ------------------------------------------------------------------- Next.js
+web/.next/
+web/out/
+web/next-env.d.ts
+.vercel
+*.tsbuildinfo
+
+# --------------------------------------------------------------- build output
+# The prototype's pages are generated from src/ by the three build scripts —
+# everything they emit is reproducible with `node build-*.mjs`.
+prototype/*.html
+prototype/KiddoFizz-Drinks-Preview.html
+KiddoFizzColaPreview.html
+*-preview.html
+*.zip
+
+# the Figma plugin's code.js is generated from src/code.src.js by build.mjs
+figma-plugin/code.js
+
+# the design canvas is generated from the .dc.html artboards by build_artboards.mjs
+design/kiddofizz-cola-website.html
+
+# --------------------------------------------------------------- reference media
+# 63MB of inspiration videos. Kept locally and on Drive, not in Git — they are
+# reference material, never shipped, and would dominate the repository.
+wireframe video/
+
+# ---------------------------------------------------------------------- local
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+.env*.local

@@ -1,0 +1,70 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cutout inspect</title>
+<style>
+  body{margin:0;background:#C8121A;color:#fff;font:11px monospace}
+  .row{display:flex;flex-wrap:wrap}
+  figure{margin:0;padding:4px}
+  figcaption{padding:2px 0;letter-spacing:.04em}
+  canvas{display:block;image-rendering:pixelated;outline:1px solid rgba(255,255,255,.35)}
+</style>
+<div class="row" id="out"></div>
+<script>
+// Magnified crops of the cut-out against the actual hero red, which is the only
+// background that shows fringing honestly. White fringe is invisible on white.
+const SRC = new URLSearchParams(location.search).get("src") || "/prototype/assets/bottle-cutout.webp";
+const Z = Number(new URLSearchParams(location.search).get("z") || 3);
+window.__done = false;
+
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  // cap+neck, left edge at the waist, right edge at the waist, base
+  const crops = [
+    ["cap + neck", 0.10, 0.00, 0.80, 0.20],
+    ["left edge", 0.00, 0.42, 0.28, 0.16],
+    ["right edge", 0.72, 0.42, 0.28, 0.16],
+    ["base", 0.05, 0.88, 0.90, 0.12]
+  ];
+  const out = document.getElementById("out");
+  for (const [name, fx, fy, fw, fh] of crops) {
+    const sx = Math.round(fx * W), sy = Math.round(fy * H);
+    const sw = Math.round(fw * W), sh = Math.round(fh * H);
+    const c = document.createElement("canvas");
+    c.width = sw * Z; c.height = sh * Z;
+    const g = c.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    const f = document.createElement("figure");
+    const cap = document.createElement("figcaption");
+    cap.textContent = name + "  " + sw + "x" + sh + " @" + Z + "x";
+    f.appendChild(cap); f.appendChild(c);
+    out.appendChild(f);
+  }
+
+  // count pixels that are pale AND semi-transparent - the signature of a white halo
+  const c2 = document.createElement("canvas");
+  c2.width = W; c2.height = H;
+  const g2 = c2.getContext("2d", { willReadFrequently: true });
+  g2.drawImage(img, 0, 0);
+  const d = g2.getImageData(0, 0, W, H).data;
+  let halo = 0, edge = 0, opaquePale = 0;
+  for (let i = 0; i < W * H; i++) {
+    const a = d[i * 4 + 3];
+    if (a > 8 && a < 248) {
+      edge++;
+      const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+      if (r > 200 && g > 200 && b > 200) halo++;
+    }
+    if (a >= 248) {
+      const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+      if (r > 225 && g > 225 && b > 225) opaquePale++;
+    }
+  }
+  window.__info = { size: W + "x" + H, edgePixels: edge, whiteFringePixels: halo,
+                    fringeShareOfEdge: +(halo / Math.max(1, edge)).toFixed(3),
+                    opaqueNearWhitePixels: opaquePale };
+  window.__done = true;
+};
+img.src = SRC;
+</script>

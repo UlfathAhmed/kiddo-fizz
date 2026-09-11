@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cap registration</title>
+<style>body{margin:0;background:#111;color:#eee;font:12px monospace;padding:10px;white-space:pre}</style>
+<div id="log">measuring…</div>
+<script>
+// Registers Gemini's splash composite against the client's real render.
+// The red screw cap is the reliable landmark: compact, saturated, unambiguous, and
+// present in both. The label was a bad choice - its detected extent clipped by a
+// different amount in each image, which threw the scale out by about 20%.
+const log = document.getElementById("log");
+window.__done = false;
+
+function load(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error("load " + src));
+    i.src = src;
+  });
+}
+
+function capBox(img) {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+
+  const isCapRed = (o) =>
+    d[o + 3] > 200 && d[o] > 150 && d[o + 1] < 85 && d[o + 2] < 85;
+
+  const rows = new Uint32Array(c.height);
+  for (let y = 0; y < c.height; y++) {
+    let n = 0;
+    for (let x = 0; x < c.width; x++) if (isCapRed((y * c.width + x) * 4)) n++;
+    rows[y] = n;
+  }
+  let peak = 0;
+  for (let y = 0; y < c.height; y++) peak = Math.max(peak, rows[y]);
+  const thr = Math.max(4, peak * 0.18);
+
+  // first contiguous band of red rows from the top = the cap
+  let y0 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) {
+    if (rows[y] >= thr) { if (y0 < 0) y0 = y; y1 = y; }
+    else if (y0 >= 0 && y - y1 > 6) break;   // tolerate a couple of thin rows
+  }
+
+  // min/max across the band picked up a splash arc at the top right as if it were
+  // part of the cap. The cap is one solid horizontal run, so take the longest
+  // contiguous run found anywhere in the band.
+  let x0 = 0, x1 = -1, bestLen = 0;
+  for (let y = y0; y <= y1; y++) {
+    let s = -1;
+    for (let x = 0; x <= c.width; x++) {
+      const on = x < c.width && isCapRed((y * c.width + x) * 4);
+      if (on && s < 0) s = x;
+      if (!on && s >= 0) { if (x - s > bestLen) { bestLen = x - s; x0 = s; x1 = x - 1; } s = -1; }
+    }
+  }
+  return { w: c.width, h: c.height, x0, x1, y0, y1, capW: x1 - x0 + 1, capH: y1 - y0 + 1 };
+}
+
+(async () => {
+  try {
+    const bottle = await load("/prototype/assets/bottle-cutout.webp");
+    const splash = await load("/prototype/assets/splash-full.webp");
+    const B = capBox(bottle), S = capBox(splash);
+
+    // Scale that makes the splash image's cap the same size as the real cap.
+    const k = B.capW / S.capW;                    // natural-pixel scale for the splash
+    const Hs = S.h * k;                            // splash height, in real-bottle pixels
+    const Ws = S.w * k;
+
+    // Cap centres must coincide once placed.
+    const capCxB = (B.x0 + B.x1) / 2, capCyB = (B.y0 + B.y1) / 2;
+    const capCxS = ((S.x0 + S.x1) / 2) * k, capCyS = ((S.y0 + S.y1) / 2) * k;
+
+    // Offsets of the splash's top-left from the bottle's top-left, in bottle heights
+    const dx = (capCxB - capCxS) / B.h;
+    const dy = (capCyB - capCyS) / B.h;
+
+    const out = {
+      realCap: B, splashCap: S,
+      splashHeightPctOfBottle: +(Hs / B.h * 100).toFixed(2),
+      // CSS: left is a % of comp WIDTH (= bottle width), top is a % of comp HEIGHT
+      cssLeftPct: +(dx * B.h / B.w * 100).toFixed(2),
+      cssTopPct: +(dy * 100).toFixed(2),
+      splashWidthInBottleHeights: +(Ws / B.h).toFixed(4),
+      scaleFromCapWidth: +k.toFixed(4),
+      crossCheckScaleFromCapHeight: +(B.capH / S.capH).toFixed(4)
+    };
+    window.__info = out;
+    log.textContent = JSON.stringify(out, null, 1);
+    window.__done = true;
+  } catch (e) {
+    log.textContent = "ERR " + e;
+    window.__done = "error";
+  }
+})();
+</script>
