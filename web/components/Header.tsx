@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { nav, showBasket, site } from "@/content/site";
+import { accountReady, nav, showBasket, site } from "@/content/site";
 import { Picture } from "./Picture";
+import { MobileNav } from "./MobileNav";
 
 /* The icon set, inline rather than as files: five small paths that never change
    and would otherwise be five more requests. */
@@ -16,11 +17,6 @@ const icons = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8.2" r="3.7" />
       <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
-    </svg>
-  ),
-  menu: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   ),
 };
@@ -52,16 +48,20 @@ export function Header({ current }: { current?: string }) {
 
         <div className="actions">
           {showBasket && (
-            <a className="icon-btn" href="#" aria-label="Basket (not wired up yet)">
+            <a className="icon-btn" href="/basket" aria-label="Basket">
               {icons.basket}
             </a>
           )}
-          <a className="icon-btn" href="#" aria-label="Account (not wired up yet)">
-            {icons.account}
-          </a>
-          <a className="icon-btn burger" href="#" aria-label="Menu (not wired up yet)">
-            {icons.menu}
-          </a>
+          {accountReady ? (
+            <a className="icon-btn" href="/account" aria-label="Your account">
+              {icons.account}
+            </a>
+          ) : (
+            <span className="icon-btn" aria-hidden="true">
+              {icons.account}
+            </span>
+          )}
+          <MobileNav current={current} />
         </div>
       </div>
     </header>

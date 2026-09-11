@@ -276,3 +276,16 @@
 .faq .ans { padding: 0 20px 18px; }
 .faq .ans p { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); }
 .faq .ans .placeholder { font-size: 12px; }
+
+/* the confirmation that replaces the form once a message is away */
+.c-sent { text-align: center; align-items: center; justify-content: center; gap: 14px; }
+.c-sent h3 { font-family: var(--round); font-weight: 700; font-size: clamp(22px, 2.4vw, 30px); }
+.c-sent p { color: var(--ink-soft); font-size: 15px; }
+.c-send[disabled] { opacity: .55; cursor: not-allowed; filter: none; transform: none; }
+.c-disclaimer code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .92em;
+  background: rgba(26, 21, 18, .07);
+  padding: 2px 6px;
+  border-radius: 6px;
+}

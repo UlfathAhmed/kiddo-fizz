@@ -5,6 +5,7 @@ import { PageHead, PanelCard } from "@/components/ui";
 import { about } from "@/content/pages";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/about" },
   title: "About Us",
   description: about.sub,
 };
@@ -13,7 +14,7 @@ export default function AboutPage() {
   return (
     <>
       <Header current="/about" />
-      <main id="top">
+      <main id="main">
         <PageHead id="a-head" eyebrow={about.eyebrow} heading={about.heading} sub={about.sub} />
 
         <section id="a-body">

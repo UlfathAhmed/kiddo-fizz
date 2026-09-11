@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build static export
+        run: npm run build
+
+      # Catches the things a green build still misses: a page that stopped
+      # exporting, an image that never got generated, or placeholder copy
+      # reaching production by accident.
+      - name: Check the export
+        run: |
+          set -e
+          for page in index about/index products/index products/bubblegum-drink/index contact/index; do
+            test -f "out/$page.html" || { echo "missing: out/$page.html"; exit 1; }
+          done
+          test -f out/sitemap.xml   || { echo "missing sitemap.xml"; exit 1; }
+          test -f out/robots.txt    || { echo "missing robots.txt"; exit 1; }
+          test -f out/opengraph-image.png || { echo "missing opengraph-image.png"; exit 1; }
+          test "$(ls out/images/*.webp | wc -l)" -ge 17 || { echo "images not generated"; exit 1; }
+          if grep -rqi 'not wired up yet' out/*.html out/*/*.html; then
+            echo "placeholder wording reached the build"; exit 1
+          fi
+          echo "export looks right"

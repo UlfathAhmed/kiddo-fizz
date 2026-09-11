@@ -807,3 +807,67 @@ section[id], main[id] { scroll-margin-top: clamp(96px, 12vh, 116px); }
   .pop { transform: translateX(-50%) scale(1); }
   .card .lead { transform: scaleX(1); }
 }
+
+/* ------------------------------------------------------------- mobile menu */
+/* Below 900px the inline nav is hidden and the burger takes over. The sheet
+   drops from under the pill rather than covering the screen: the pill is the
+   brand's anchor and should stay visible while the menu is open. */
+.nav-sheet {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: clamp(12px, 2.6vw, 34px);
+  right: clamp(12px, 2.6vw, 34px);
+  z-index: 41;
+  padding: 10px;
+  border-radius: 26px;
+  background: var(--cream);
+  border: 1px solid rgba(26, 21, 18, .07);
+  box-shadow: 0 18px 44px rgba(60, 6, 8, .26);
+  transform-origin: 50% 0;
+  animation: sheetIn .26s cubic-bezier(.22, 1, .36, 1) both;
+}
+.nav-sheet nav { display: flex; flex-direction: column; }
+.nav-sheet a {
+  display: flex;
+  align-items: center;
+  /* a comfortable target on a phone, not a line of text with a hit box */
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+}
+.nav-sheet a.on { font-weight: 800; background: rgba(26, 21, 18, .06); }
+.nav-sheet a:active { background: rgba(26, 21, 18, .09); }
+.nav-sheet a:focus-visible { outline: 3px solid var(--brand-blue); outline-offset: -3px; }
+
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-sheet { animation: none; } }
+
+/* the sheet only exists below the breakpoint, where the inline nav is hidden */
+@media (min-width: 901px) { .nav-sheet { display: none; } }
+
+/* ---------------------------------------------------------------- skip link */
+.skip {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translate(-50%, -140%);
+  z-index: 60;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform .18s ease;
+}
+.skip:focus { transform: translate(-50%, 0); color: var(--cream); }

@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Gallery } from "@/components/product/Gallery";
 import { BtnLine, BtnSolid, Bubbles, PanelCard, Scallop } from "@/components/ui";
+import { ProductSchema } from "@/components/Schema";
 import { nutrition, nutritionNotice, product } from "@/content/product";
 
 /* One product today, and the range page already has a slot for the second — so
@@ -14,6 +15,7 @@ export function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/products/bubblegum-drink" },
   title: product.name,
   description: product.lede,
 };
@@ -25,7 +27,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <Header current="/products" />
-      <main id="top">
+      <main id="main">
         {/* ------------------------------------------------------------ hero */}
         <section id="p-hero">
           <Bubbles />
@@ -54,7 +56,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </dl>
 
               <div className="p-actions">
-                <BtnSolid href="#">Find a stockist</BtnSolid>
+                <BtnSolid href="/contact">Find a stockist</BtnSolid>
                 <BtnLine href="#nutrition">See nutrition</BtnLine>
               </div>
 
@@ -157,6 +159,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <Footer />
       </main>
+      <ProductSchema />
     </>
   );
 }

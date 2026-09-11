@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { footerNav, marquee, site } from "@/content/site";
+import { footerNav, legalNav, marquee, site, socials } from "@/content/site";
 import { Picture } from "./Picture";
 
 const socialIcons = {
@@ -64,14 +64,30 @@ export function Footer() {
             ))}
           </p>
           <div className="socials">
-            {(Object.keys(socialIcons) as Array<keyof typeof socialIcons>).map((key) => (
-              <a key={key} href="#" aria-label={`${key[0].toUpperCase()}${key.slice(1)} (not wired up yet)`}>
-                {socialIcons[key]}
-              </a>
-            ))}
+            {socials.map((s) => {
+              const icon = socialIcons[s.name.toLowerCase() as keyof typeof socialIcons];
+              /* No URL supplied yet, so the mark renders but not as a link to
+                 nowhere. A dead link is worse than no link. */
+              return s.url ? (
+                <a key={s.name} href={s.url} aria-label={s.name} target="_blank" rel="noopener noreferrer">
+                  {icon}
+                </a>
+              ) : (
+                <span key={s.name} aria-hidden="true">
+                  {icon}
+                </span>
+              );
+            })}
           </div>
           <p className="foot-legal">
-            <a href="#">Privacy policy</a> &middot; <a href="#">Terms of service</a>
+            {legalNav.map((item, i) => (
+              <span key={item.href}>
+                {i > 0 && " · "}
+                <Link href={item.href} prefetch={false}>
+                  {item.label}
+                </Link>
+              </span>
+            ))}
           </p>
           <p className="foot-copy">
             &copy; {site.year} {site.legalName} &middot; {site.companyNumber} &middot; Made in the UK

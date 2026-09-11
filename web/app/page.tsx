@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Picture } from "@/components/Picture";
@@ -10,7 +11,7 @@ export default function HomePage() {
   return (
     <>
       <Header current="/" />
-      <main>
+      <main id="main">
         {/* ------------------------------------------------------------ hero */}
         <section id="hero">
           <Bubbles />
@@ -89,9 +90,11 @@ export default function HomePage() {
                 </h2>
               </div>
 
-              <a className="show-cta" href="#showcase">
+              {/* the showcase CTA pointed at its own section; contact is where a
+                  "where can I buy this" question can actually be answered */}
+              <Link className="show-cta" href="/contact" prefetch={false}>
                 {home.showcase.cta}
-              </a>
+              </Link>
 
               <div className="track">
                 <article className="pcard one">

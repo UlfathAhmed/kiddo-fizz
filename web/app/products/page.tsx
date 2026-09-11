@@ -7,6 +7,7 @@ import { products } from "@/content/pages";
 import { product } from "@/content/product";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/products" },
   title: "Products",
   description: products.sub,
 };
@@ -15,7 +16,7 @@ export default function ProductsPage() {
   return (
     <>
       <Header current="/products" />
-      <main id="top">
+      <main id="main">
         <PageHead id="r-head" eyebrow={products.eyebrow} heading={products.heading} sub={products.sub} />
 
         <section id="r-body">
@@ -54,7 +55,7 @@ export default function ProductsPage() {
 
                 <div className="r-actions">
                   <BtnSolid href={`/products/${product.slug}`}>See full details</BtnSolid>
-                  <BtnLine href="#">Find a stockist</BtnLine>
+                  <BtnLine href="/contact">Find a stockist</BtnLine>
                 </div>
               </div>
             </article>
@@ -68,7 +69,7 @@ export default function ProductsPage() {
                 <h2>{products.soon.title}</h2>
                 <p className="r-lede">{products.soon.lede}</p>
                 <div className="r-actions">
-                  <BtnLine href="#" className="dark">
+                  <BtnLine href="/contact" className="dark">
                     {products.soon.cta}
                   </BtnLine>
                 </div>

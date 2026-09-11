@@ -7,6 +7,7 @@ import { contact, faqs } from "@/content/pages";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contact" },
   title: "Contact",
   description: contact.sub,
 };
@@ -15,7 +16,7 @@ export default function ContactPage() {
   return (
     <>
       <Header current="/contact" />
-      <main id="top">
+      <main id="main">
         <section id="c-head">
           <Bubbles />
           <div className="c-bed" aria-hidden="true" />

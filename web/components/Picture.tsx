@@ -45,6 +45,10 @@ export function Picture({
   const srcSet = entry.sources.map((s) => `${s.src} ${s.width}w`).join(", ");
 
   return (
+    /* next/image cannot optimise under output: "export" — there is no server to
+       resize on demand. scripts/gen-images.mjs pre-generates the widths and this
+       writes the srcset itself, which is why the rule is suppressed here. */
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={largest.src}
       srcSet={srcSet}

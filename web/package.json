@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "images": "node scripts/gen-images.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "brand": "node scripts/gen-brand-assets.mjs",
+    "lint": "eslint ."
   },
   "dependencies": {
     "gsap": "^3.12.5",
@@ -19,7 +21,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.4",
     "sharp": "^0.35.4",
     "typescript": "^5"
+  },
+  "description": "Website for KiddoFizz Drinks, a caffeine-free bubblegum drink for UK families.",
+  "engines": {
+    "node": ">=20.9"
   }
 }

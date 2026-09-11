@@ -1,0 +1,10 @@
+# Netlify / Cloudflare Pages read this. Long-cache the fingerprinted
+# build output; never cache the HTML, so a deploy is visible immediately.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
